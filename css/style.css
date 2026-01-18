@@ -1,113 +1,224 @@
-/* إعدادات الخط والخلفية العامة */
-body {
-    background-color: #111; /* خلفية داكنة جداً لبروز اللعبة */
-    color: #eee;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    margin: 0;
-    touch-action: none;
-    /* هذا السطر مهم جداً لجعل البكسلات حادة وغير ضبابية */
-    image-rendering: pixelated; 
+// الحجم مطابق لملف CSS
+const TILE_SIZE = 35; 
+
+const container = document.getElementById('game-container');
+const levelDisplay = document.getElementById('level-display');
+const movesDisplay = document.getElementById('moves-display');
+
+let currentLevelIndex = 0;
+let currentMap = []; 
+let playerPos = {x: 0, y: 0};
+let moves = 0;
+
+// متغيرات اللمس
+let touchStartX = 0;
+let touchStartY = 0;
+
+window.onload = function() {
+    loadLevel(currentLevelIndex);
+    document.addEventListener('keydown', handleInput);
+    
+    // تفعيل اللمس للجوال
+    container.addEventListener('touchstart', handleTouchStart, {passive: false});
+    container.addEventListener('touchend', handleTouchEnd, {passive: false});
+};
+
+function loadLevel(index) {
+    if (index >= levels.length) {
+        alert("🎉 مبروك! ختمت جميع المراحل!");
+        currentLevelIndex = 0;
+        index = 0;
+    }
+    
+    // نسخ المرحلة
+    currentMap = JSON.parse(JSON.stringify(levels[index]));
+    
+    moves = 0;
+    updateUI();
+    findPlayerStart();
+    render();
 }
 
-.game-wrapper { display: flex; flex-direction: column; align-items: center; }
-.header { margin-bottom: 10px; text-align: center; text-shadow: 2px 2px #000; }
-.stats span { margin: 0 10px; font-size: 1rem; background: #333; padding: 5px 15px; border: 2px solid #555; border-radius: 4px; }
-
-/* حاوية اللعبة */
-#game-container {
-    position: relative;
-    background-color: #000; /* لون الفراغ */
-    border: 4px solid #333;
-    box-shadow: 0 0 40px rgba(0,0,0,1);
-    box-sizing: content-box;
-    /* خلفية افتراضية للأرضية */
-    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACMAAAAjCAYAAAAe2bNZAAAAAXNSR0IArs4c6QAAAEFJREFUWEft1TEBACAMwMDC514hGARtIJOA61XQ817g7Z61L2aNmTE1JkBNmQAlTYbMmLUxAWrKBCgps/8wcwGL3Q4hD6d9DQAAAABJRU5ErkJggg==');
+function findPlayerStart() {
+    for (let y = 0; y < currentMap.length; y++) {
+        for (let x = 0; x < currentMap[y].length; x++) {
+            if (currentMap[y][x] === 4) {
+                playerPos = {x: x, y: y};
+                currentMap[y][x] = 0; // تحويل مكانه لأرضية
+            }
+        }
+    }
 }
 
-/* === إعدادات الخلايا === */
-.cell {
-    width: 35px;
-    height: 35px;
-    position: absolute;
-    box-sizing: border-box;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-size: cover; /* لتغطية كامل المربع بالصورة */
+function resetLevel() {
+    loadLevel(currentLevelIndex);
 }
 
-/* ======================== */
-/* === صور البكسل آرت === */
-/* ======================== */
-
-/* 1. الجدار (Wall) - طوب رمادي قديم */
-.wall {
-    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACMAAAAjCAYAAAAe2bNZAAAAAXNSR0IArs4c6QAAAGBJREFUWEftmMEOwCAIBJ3//+f21LTSXUAsy8m8GEYCgq7qW4aR8V3V+xImExkRCRIhE54gE6Y/E5k8Z8R1Y5/tXg0TISN64QkyYfozkclzRlw39tnu1TA/I4O94w2l0A4h3K2ZqgAAAABJRU5ErkJggg==');
-    border: none;
+function updateUI() {
+    if(levelDisplay) levelDisplay.innerText = currentLevelIndex + 1;
+    if(movesDisplay) movesDisplay.innerText = moves;
 }
 
-/* 2. الأرضية (Floor) - بلاط حجري داكن */
-.floor {
-    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACMAAAAjCAYAAAAe2bNZAAAAAXNSR0IArs4c6QAAAEFJREFUWEft1TEBACAMwMDC514hGARtIJOA61XQ817g7Z61L2aNmTE1JkBNmQAlTYbMmLUxAWrKBCgps/8wcwGL3Q4hD6d9DQAAAABJRU5ErkJggg==');
-    border: none;
+// === دالة الرسم المصححة (تحسب العرض الصحيح) ===
+function render() {
+    container.innerHTML = '';
+    
+    // 1. حساب عرض المرحلة بناءً على أطول صف (وليس الصف الأول فقط)
+    let maxWidth = 0;
+    for(let row of currentMap) {
+        if(row.length > maxWidth) maxWidth = row.length;
+    }
+    
+    container.style.width = maxWidth * TILE_SIZE + 'px';
+    container.style.height = currentMap.length * TILE_SIZE + 'px';
+
+    for (let y = 0; y < currentMap.length; y++) {
+        for (let x = 0; x < currentMap[y].length; x++) {
+            let type = currentMap[y][x];
+            
+            // لا نرسم الفراغ الخارجي (رقم 0 خارج الجدران) لتوفير الأداء
+            // لكن هنا سنرسم كل شيء لضمان الشكل
+            
+            let tile = document.createElement('div');
+            tile.classList.add('cell');
+            tile.style.left = x * TILE_SIZE + 'px';
+            tile.style.top = y * TILE_SIZE + 'px';
+
+            // إضافة الكلاسات حسب الرقم
+            if (type === 1) tile.classList.add('wall');
+            else if (type === 3) tile.classList.add('goal');
+            else tile.classList.add('floor');
+
+            // رسم الصناديق
+            if (type === 2 || type === 5) {
+                let box = document.createElement('div');
+                box.classList.add('cell', 'box');
+                box.style.left = x * TILE_SIZE + 'px';
+                box.style.top = y * TILE_SIZE + 'px';
+                
+                if (type === 5) {
+                    box.classList.add('completed');
+                    tile.classList.add('goal'); // التأكد من رسم الهدف تحت الصندوق
+                }
+                container.appendChild(box);
+            }
+            
+            container.appendChild(tile);
+        }
+    }
+
+    // رسم اللاعب
+    let player = document.createElement('div');
+    player.classList.add('cell', 'player');
+    player.style.left = playerPos.x * TILE_SIZE + 'px';
+    player.style.top = playerPos.y * TILE_SIZE + 'px';
+    container.appendChild(player);
 }
 
-/* 3. الهدف (Goal) - علامة X ذهبية على الأرض */
-.goal {
-    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACMAAAAjCAYAAAAe2bNZAAAAAXNSR0IArs4c6QAAAF9JREFUWEft1TEOgCAQBMFF/P9zU1tMLCzUImJqM3k7LAt7qq9tj7n3XdUvMxfMjbkwAYoyAUpK/mTOXJgARZkAJSU35sz9wQxoZ7+mS6A9+039D2ZAH/+aLoG2B4j1DiFPm/8dAAAAAElFTkSuQmCC');
-    border: none;
-}
-.goal::after { content: ''; /* إزالة علامة X النصية القديمة */ }
+// التحكم بالكيبورد
+function handleInput(e) {
+    // منع تحريك الصفحة بالأسهم
+    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
+        e.preventDefault();
+    }
 
-/* 4. الصندوق (Box) - صندوق خشبي */
-.box {
-    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACMAAAAjCAYAAAAe2bNZAAAAAXNSR0IArs4c6QAAAIdJREFUWEftmEsOgCAMBKnH8eQeTa3+kBgF040uTBb6mrbDAFf1E4aZ0Vf1LWEyISNKBAmTCU+QCdMficzbM+I7Y5+tXo0TISMqoQkyYfozkXl7Rnxn7LPVq3FCZFTrW/m+70aY55Vf1XqP/67qXU39eF0Jk4k+R6yGkYn/HLF6X2KeAI/3DiFB34aUAAAAAElFTkSuQmCC');
-    background-color: transparent; /* إزالة اللون القديم */
-    border: none;
-    border-radius: 0;
-    z-index: 5;
-    /* حركة ناعمة عند الدفع */
-    transition: all 0.1s ease-in-out;
-}
+    let dx = 0, dy = 0;
+    if (e.key === 'ArrowUp') dy = -1;
+    else if (e.key === 'ArrowDown') dy = 1;
+    else if (e.key === 'ArrowLeft') dx = -1;
+    else if (e.key === 'ArrowRight') dx = 1;
+    else return;
 
-/* 5. الصندوق المكتمل (Completed Box) - صندوق ذهبي متوهج */
-.box.completed {
-    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACMAAAAjCAYAAAAe2bNZAAAAAXNSR0IArs4c6QAAAJFJREFUWEftl0sOgCAMRKnH8eQeTa0RTIz8FNqFKSGvfToMcFXfYZgZfVXfEiYTMrJEkDCZ8ASZMP2RyLw9I74z9tnq1TjJMlJ7Y5d1RngkZKT2/j0zwiMhI+H/7JkRHgkZCa/3zIjPjH22ejVOskw7gG9bN8I8r/yq1mv8d1XvauqN15UwmeczYjWMTPwzYvW+xDwh3w4hG8U0bQAAAABJRU5ErkJggg==');
-    border: none;
-    box-shadow: 0 0 15px #ffd700; /* توهج ذهبي */
+    moveLogic(dx, dy);
 }
 
-/* 6. الشخصية (Player) - مستكشف بكسل */
-.player {
-    /* صورة شخصية بكسل (وجه للأمام) */
-    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACMAAAAjCAYAAAAe2bNZAAAAAXNSR0IArs4c6QAAAKZJREFUWEftmFsOgCAMQ6nH8eQeTS2f8GE0bA0E+DDSPluHAtzVrxhmRlf1LWESkRFCBAmTCU+QCdMficx9ZsQ3Y5+tXg0TISNcQRMMm7H9Qj1zG6k7F653I0yETPz/bYc3v580n8g7R7e4k+YToQk2N29/1cI9mAjP3J253o2JkIn7mb8V5nnnV7Xe47+reldTb1xXwmTiMyNWw8jEMyNW70vMHX8/DiEt4Y0KAAAAAElFTkSuQmCC');
-    background-color: transparent;
-    border: none;
-    border-radius: 0;
-    z-index: 10;
-    box-shadow: none;
-    /* هذا هو السحر: حركة انسيابية للشخصية بين المربعات */
-    transition: left 0.1s linear, top 0.1s linear;
+// التحكم باللمس
+function handleTouchStart(e) {
+    e.preventDefault();
+    touchStartX = e.changedTouches[0].screenX;
+    touchStartY = e.changedTouches[0].screenY;
 }
 
-/* زر إعادة الضبط بستايل بكسل */
-.btn-reset {
-    margin-top: 15px;
-    padding: 8px 20px;
-    background: #d35400;
-    border: 3px solid #e67e22;
-    color: #fff;
-    font-family: 'Courier New', Courier, monospace; /* خط يشبه البكسل */
-    font-weight: bold;
-    cursor: pointer;
-    text-transform: uppercase;
-    box-shadow: 3px 3px 0px #000; /* ظل صلب */
+function handleTouchEnd(e) {
+    e.preventDefault();
+    let touchEndX = e.changedTouches[0].screenX;
+    let touchEndY = e.changedTouches[0].screenY;
+    handleSwipe(touchStartX, touchStartY, touchEndX, touchEndY);
 }
-.btn-reset:active {
-    transform: translate(2px, 2px);
-    box-shadow: 1px 1px 0px #000;
+
+function handleSwipe(startX, startY, endX, endY) {
+    let diffX = endX - startX;
+    let diffY = endY - startY;
+    if (Math.abs(diffX) < 30 && Math.abs(diffY) < 30) return; // سحبة قصيرة جداً
+
+    let dx = 0, dy = 0;
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+        dx = diffX > 0 ? 1 : -1;
+    } else {
+        dy = diffY > 0 ? 1 : -1;
+    }
+    moveLogic(dx, dy);
+}
+
+// منطق الحركة المشترك
+function moveLogic(dx, dy) {
+    let nextX = playerPos.x + dx;
+    let nextY = playerPos.y + dy;
+    
+    // حماية من الخروج خارج المصفوفة
+    if (!currentMap[nextY] || typeof currentMap[nextY][nextX] === 'undefined') return;
+
+    let nextTile = currentMap[nextY][nextX];
+
+    // 1. الجدار
+    if (nextTile === 1) return;
+
+    // 2. الصندوق
+    if (nextTile === 2 || nextTile === 5) {
+        let afterBoxX = nextX + dx;
+        let afterBoxY = nextY + dy;
+        
+        if (!currentMap[afterBoxY] || typeof currentMap[afterBoxY][afterBoxX] === 'undefined') return;
+        
+        let afterBoxTile = currentMap[afterBoxY][afterBoxX];
+
+        if (afterBoxTile === 0 || afterBoxTile === 3) {
+            // تحريك الصندوق
+            currentMap[afterBoxY][afterBoxX] = (afterBoxTile === 3) ? 5 : 2;
+            
+            // تحديث مكان الصندوق القديم
+            if (nextTile === 5) currentMap[nextY][nextX] = 3;
+            else currentMap[nextY][nextX] = 0;
+            
+            nextTile = currentMap[nextY][nextX]; 
+        } else {
+            return; // الصندوق مسدود
+        }
+    }
+
+    // 3. تحريك اللاعب
+    playerPos.x = nextX;
+    playerPos.y = nextY;
+    moves++;
+    
+    updateUI();
+    render();
+    checkWin();
+}
+
+function checkWin() {
+    let remainingBoxes = 0;
+    for (let row of currentMap) {
+        for (let cell of row) {
+            if (cell === 2) remainingBoxes++;
+        }
+    }
+
+    if (remainingBoxes === 0) {
+        setTimeout(() => {
+            alert("✨ أحسنت! المرحلة التالية...");
+            currentLevelIndex++;
+            loadLevel(currentLevelIndex);
+        }, 100);
+    }
 }
