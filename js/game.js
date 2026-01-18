@@ -1,6 +1,4 @@
-// === تعديل هام: تغيير حجم الشبكة ليتطابق مع CSS ===
-const TILE_SIZE = 35; // كان 50، أصبح 35 ليتناسب مع الخرائط الكبيرة
-
+const TILE_SIZE = 35; 
 const container = document.getElementById('game-container');
 const levelDisplay = document.getElementById('level-display');
 const movesDisplay = document.getElementById('moves-display');
@@ -8,33 +6,28 @@ const movesDisplay = document.getElementById('moves-display');
 let currentLevelIndex = 0;
 let currentMap = []; 
 let playerPos = {x: 0, y: 0};
+let playerFacingRight = true; // لتتبع اتجاه الوجه
 let moves = 0;
 
-// متغيرات للمس
 let touchStartX = 0;
 let touchStartY = 0;
 
 window.onload = function() {
     loadLevel(currentLevelIndex);
     document.addEventListener('keydown', handleInput);
-    
-    // إضافة مستمعات اللمس (للجوال)
     container.addEventListener('touchstart', handleTouchStart, {passive: false});
     container.addEventListener('touchend', handleTouchEnd, {passive: false});
 };
 
-// ... (دوال loadLevel, render, resetLevel, checkWin تبقى كما هي) ...
-// فقط تأكد أنك نسخت دوال render و loadLevel من الكود السابق
-// سأعيد كتابة دوال اللمس الجديدة فقط هنا للإيجاز، أضفها في نهاية الملف
-
 function loadLevel(index) {
     if (index >= levels.length) {
-        alert("🎉 مبروك! أنهيت جميع المراحل!");
+        alert("🎉 مبروك! ختمت جميع المراحل!");
         currentLevelIndex = 0;
         index = 0;
     }
     currentMap = JSON.parse(JSON.stringify(levels[index]));
     moves = 0;
+    playerFacingRight = true; // إعادة تعيين الاتجاه
     updateUI();
     findPlayerStart();
     render();
@@ -60,7 +53,12 @@ function updateUI() {
 
 function render() {
     container.innerHTML = '';
-    container.style.width = currentMap[0].length * TILE_SIZE + 'px';
+    
+    // حساب العرض تلقائياً
+    let maxWidth = 0;
+    for(let row of currentMap) if(row.length > maxWidth) maxWidth = row.length;
+    
+    container.style.width = maxWidth * TILE_SIZE + 'px';
     container.style.height = currentMap.length * TILE_SIZE + 'px';
 
     for (let y = 0; y < currentMap.length; y++) {
@@ -75,6 +73,7 @@ function render() {
             else if (type === 3) tile.classList.add('goal');
             else tile.classList.add('floor');
 
+            // رسم الصناديق
             if (type === 2 || type === 5) {
                 let box = document.createElement('div');
                 box.classList.add('cell', 'box');
@@ -89,87 +88,85 @@ function render() {
             container.appendChild(tile);
         }
     }
+
+    // رسم اللاعب وتحديد اتجاهه
     let player = document.createElement('div');
     player.classList.add('cell', 'player');
+    
+    // تطبيق الاتجاه
+    if (!playerFacingRight) {
+        player.classList.add('facing-left');
+    }
+    
     player.style.left = playerPos.x * TILE_SIZE + 'px';
     player.style.top = playerPos.y * TILE_SIZE + 'px';
+    // إضافة معرف ID لتسهيل الوصول إليه عند التحريك
+    player.id = 'player-entity'; 
     container.appendChild(player);
 }
 
 function handleInput(e) {
-    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
-        e.preventDefault();
-    }
+    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) e.preventDefault();
     let dx = 0, dy = 0;
     if (e.key === 'ArrowUp') dy = -1;
     else if (e.key === 'ArrowDown') dy = 1;
     else if (e.key === 'ArrowLeft') dx = -1;
     else if (e.key === 'ArrowRight') dx = 1;
     else return;
-
     moveLogic(dx, dy);
 }
 
-// === منطق اللمس الجديد ===
 function handleTouchStart(e) {
-    e.preventDefault(); // لمنع التمرير
+    e.preventDefault();
     touchStartX = e.changedTouches[0].screenX;
     touchStartY = e.changedTouches[0].screenY;
 }
-
 function handleTouchEnd(e) {
     e.preventDefault();
-    let touchEndX = e.changedTouches[0].screenX;
-    let touchEndY = e.changedTouches[0].screenY;
-    
-    handleSwipe(touchStartX, touchStartY, touchEndX, touchEndY);
+    let dx = e.changedTouches[0].screenX - touchStartX;
+    let dy = e.changedTouches[0].screenY - touchStartY;
+    if (Math.abs(dx) > Math.abs(dy)) moveLogic(dx > 0 ? 1 : -1, 0);
+    else moveLogic(0, dy > 0 ? 1 : -1);
 }
 
-function handleSwipe(startX, startY, endX, endY) {
-    let diffX = endX - startX;
-    let diffY = endY - startY;
-    
-    // يجب أن تكون الحركة قوية كفاية لتعتبر سحباً
-    if (Math.abs(diffX) < 30 && Math.abs(diffY) < 30) return;
-
-    let dx = 0, dy = 0;
-    
-    // تحديد الاتجاه الأقوى (أفقي أم عمودي)
-    if (Math.abs(diffX) > Math.abs(diffY)) {
-        dx = diffX > 0 ? 1 : -1;
-    } else {
-        dy = diffY > 0 ? 1 : -1;
-    }
-    
-    moveLogic(dx, dy);
-}
-
-// فصلنا منطق الحركة ليعمل مع اللمس ومع الكيبورد
 function moveLogic(dx, dy) {
+    // منطق توجيه الوجه (يمين/يسار)
+    if (dx === 1) playerFacingRight = true;
+    else if (dx === -1) playerFacingRight = false;
+
     let nextX = playerPos.x + dx;
     let nextY = playerPos.y + dy;
-    let nextTile = currentMap[nextY][nextX];
+    
+    if (!currentMap[nextY] || typeof currentMap[nextY][nextX] === 'undefined') return;
 
+    let nextTile = currentMap[nextY][nextX];
     if (nextTile === 1) return;
 
+    // التعامل مع الصناديق
     if (nextTile === 2 || nextTile === 5) {
         let afterBoxX = nextX + dx;
         let afterBoxY = nextY + dy;
+        if (!currentMap[afterBoxY] || typeof currentMap[afterBoxY][afterBoxX] === 'undefined') return;
+        
         let afterBoxTile = currentMap[afterBoxY][afterBoxX];
-
         if (afterBoxTile === 0 || afterBoxTile === 3) {
+            // تحريك الصندوق منطقياً
             currentMap[afterBoxY][afterBoxX] = (afterBoxTile === 3) ? 5 : 2;
-            if (nextTile === 5) currentMap[nextY][nextX] = 3;
-            else currentMap[nextY][nextX] = 0;
-            nextTile = currentMap[nextY][nextX]; 
+            currentMap[nextY][nextX] = (nextTile === 5) ? 3 : 0;
+            nextTile = currentMap[nextY][nextX]; // تحديث المربع القادم ليصبح فارغاً
         } else {
-            return; 
+            return; // مسدود
         }
     }
 
+    // تحريك اللاعب منطقياً
     playerPos.x = nextX;
     playerPos.y = nextY;
     moves++;
+    
+    // بدلاً من إعادة رسم كل شيء (render) مما يسبب وميضاً، سنحدث المواقع فقط
+    // لكن للتبسيط وضمان عدم حدوث أخطاء رسم، سنعيد الرسم الكامل حالياً
+    // لأن الأداء ممتاز مع هذا العدد من العناصر
     updateUI();
     render();
     checkWin();
@@ -177,14 +174,10 @@ function moveLogic(dx, dy) {
 
 function checkWin() {
     let remainingBoxes = 0;
-    for (let row of currentMap) {
-        for (let cell of row) {
-            if (cell === 2) remainingBoxes++;
-        }
-    }
+    for (let row of currentMap) for (let cell of row) if (cell === 2) remainingBoxes++;
     if (remainingBoxes === 0) {
         setTimeout(() => {
-            alert("✨ أحسنت!");
+            alert("✨ أحسنت! المستوى التالي...");
             currentLevelIndex++;
             loadLevel(currentLevelIndex);
         }, 100);
