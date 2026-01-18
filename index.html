@@ -2,9 +2,151 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سرداب الكنوز - المحرك الأساسي</title>
-    <link rel="stylesheet" href="css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>سرداب الكنوز (Pixel Edition)</title>
+    <style>
+        /* =========================================
+           1. تصميم اللعبة (CSS PIXEL ART)
+           ========================================= */
+        body {
+            background-color: #111; /* خلفية سوداء لضمان عدم البياض */
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            touch-action: none;
+            overflow: hidden;
+        }
+
+        .game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* تكبير اللعبة لتملأ الشاشة */
+            transform: scale(1.6);
+            transform-origin: center center;
+        }
+
+        .header { margin-bottom: 10px; text-align: center; }
+        .header h1 { font-size: 1rem; margin: 0 0 5px 0; color: #f1c40f; text-shadow: 2px 2px 0 #000; }
+        .stats { background: #222; padding: 5px 10px; border-radius: 5px; border: 1px solid #444; }
+        .stats span { font-size: 0.8rem; margin: 0 5px; color: #ddd; }
+
+        #game-container {
+            position: relative;
+            background-color: #0d0d0d; /* لون أرضية اللعب */
+            border: 4px solid #555;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            margin-top: 10px;
+        }
+
+        /* الخلية (وحدة البناء) */
+        .cell {
+            width: 35px;
+            height: 35px;
+            position: absolute;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* الجدار: بكسل آرت عبر CSS */
+        .wall {
+            background-color: #7f8c8d;
+            border-top: 4px solid #bdc3c7;
+            border-left: 4px solid #bdc3c7;
+            border-bottom: 4px solid #2c3e50;
+            border-right: 4px solid #2c3e50;
+        }
+
+        /* الأرضية */
+        .floor {
+            background-color: #2c3e50;
+            border: 1px solid #34495e; /* شبكة خفيفة */
+        }
+
+        /* الهدف */
+        .goal {
+            background-color: #2c3e50;
+            border: 2px dashed #e74c3c;
+        }
+        .goal::after {
+            content: '';
+            width: 8px; height: 8px;
+            background: #e74c3c;
+            border-radius: 50%;
+            box-shadow: 0 0 5px #e74c3c;
+        }
+
+        /* الصندوق */
+        .box {
+            background-color: #d35400;
+            border-top: 3px solid #e67e22;
+            border-left: 3px solid #e67e22;
+            border-bottom: 3px solid #a04000;
+            border-right: 3px solid #a04000;
+            z-index: 5;
+            transition: left 0.1s linear, top 0.1s linear; /* حركة ناعمة */
+        }
+        /* تفاصيل الصندوق */
+        .box::before {
+            content: ''; position: absolute;
+            width: 60%; height: 60%;
+            border: 2px solid #a04000;
+        }
+
+        /* الصندوق المكتمل */
+        .box.completed {
+            background-color: #f1c40f;
+            border-color: #f39c12 #f39c12 #b7950b #b7950b;
+            box-shadow: 0 0 15px #f1c40f;
+        }
+        .box.completed::before { border-color: #b7950b; }
+
+        /* البطل */
+        .player {
+            background-color: #e74c3c;
+            z-index: 10;
+            width: 26px !important;
+            height: 26px !important;
+            border-radius: 3px;
+            box-shadow: 0 3px 0 #922b21;
+            transition: left 0.1s linear, top 0.1s linear;
+        }
+        /* وجه البطل */
+        .player::after {
+            content: ''; position: absolute;
+            top: 6px; left: 5px;
+            width: 4px; height: 4px;
+            background: #000;
+            box-shadow: 12px 0 0 #000; /* العين الثانية */
+        }
+
+        /* زر الإعادة */
+        .btn-reset {
+            margin-top: 15px;
+            padding: 8px 25px;
+            background: #e67e22;
+            border: none;
+            border-bottom: 4px solid #d35400;
+            color: white;
+            font-weight: bold;
+            font-family: monospace;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .btn-reset:active {
+            transform: translateY(4px);
+            border-bottom: 0;
+        }
+        
+        /* شاشة التحميل في حال تأخر الجافاسكريبت */
+        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666; }
+    </style>
 </head>
 <body>
 
@@ -17,15 +159,250 @@
             </div>
         </div>
 
-        <div id="game-container"></div>
-
-        <div class="controls">
-            <p>استخدم الأسهم ⬅️⬆️➡️⬇️ للتحرك</p>
-            <button onclick="resetLevel()" class="btn-reset">🔄 إعادة المحاولة</button>
+        <div id="game-container">
+            <div id="loading">جاري تحميل اللعبة...</div>
         </div>
+
+        <button onclick="resetLevel()" class="btn-reset">🔄 إعادة المحاولة</button>
+        <div style="margin-top:10px; font-size: 0.7rem; color: #555;">استخدم الأسهم أو اللمس للتحرك</div>
     </div>
 
-    <script src="js/levels.js"></script>
-    <script src="js/game.js"></script>
+    <script>
+        /* =========================================
+           2. بيانات المراحل (50 LEVELS - MICROBAN)
+           ========================================= */
+        const levels = [
+            // Level 1
+            [[1,1,1,1,1],[1,0,3,0,1],[1,0,0,1,1,1],[1,0,2,0,0,1],[1,1,0,2,0,1],[1,0,4,3,0,1],[1,1,1,1,1,1]],
+            // Level 2
+            [[1,1,1,1,1,1],[1,0,0,0,3,1],[1,0,2,4,0,1],[1,0,1,1,1,1],[1,0,1,1,1,1],[1,1,1,1,1,1]],
+            // Level 3
+            [[1,1,1,1,1],[1,4,2,0,1],[1,0,2,3,1],[1,0,3,0,1],[1,1,1,1,1]],
+            // Level 4
+            [[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,1],[1,0,2,2,2,3,3,1],[1,0,0,0,4,3,0,1],[1,1,1,1,1,1,1,1]],
+            // Level 5
+            [[1,1,1,1,1,1,1],[1,0,0,0,0,0,1],[1,0,1,2,1,0,1],[1,0,0,4,0,0,1],[1,0,3,2,3,0,1],[1,0,0,0,0,0,1],[1,1,1,1,1,1,1]],
+            // Level 6
+            [[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,1],[1,0,2,2,0,0,0,1],[1,0,0,4,0,0,0,1],[1,0,3,3,0,0,0,1],[1,1,1,1,1,1,1,1]],
+            // Level 7
+            [[1,1,1,1,1,1,1],[1,0,0,0,3,0,1],[1,0,1,0,2,0,1],[1,0,0,0,4,0,1],[1,0,1,0,2,0,1],[1,0,0,0,3,0,1],[1,1,1,1,1,1,1]],
+            // Level 8
+            [[1,1,1,1,1,1],[1,0,0,4,1,1],[1,0,2,2,1,1],[1,1,1,0,1,1],[1,0,0,0,0,1],[1,0,3,3,0,1],[1,1,1,1,1,1]],
+            // Level 9
+            [[1,1,1,1,1,1,1],[1,0,1,1,0,0,1],[1,0,0,2,0,0,1],[1,0,0,4,0,0,1],[1,1,2,1,2,1,1],[1,3,0,3,0,3,1],[1,1,1,1,1,1,1]],
+            // Level 10
+            [[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,1],[1,0,0,2,2,2,0,1],[1,0,3,3,3,0,0,1],[1,0,0,4,0,0,0,1],[1,1,1,1,1,1,1,1]],
+            // Level 11
+            [[1,1,1,1,1,1],[1,3,3,0,0,1],[1,1,1,2,2,1],[1,0,0,4,0,1],[1,0,0,0,0,1],[1,1,1,1,1,1]],
+            // Level 12
+            [[1,1,1,1,1,1,1],[1,0,3,2,0,0,1],[1,0,0,1,0,0,1],[1,0,4,2,3,0,1],[1,0,0,0,0,0,1],[1,1,1,1,1,1,1]],
+            // Level 13
+            [[1,1,1,1,1,1,1],[1,0,0,3,3,3,1],[1,0,0,1,1,1,1],[1,0,2,0,0,0,1],[1,0,2,4,2,0,1],[1,0,0,0,0,0,1],[1,1,1,1,1,1,1]],
+            // Level 14
+            [[0,1,1,1,1,1,0],[1,1,0,0,0,1,1],[1,0,2,3,2,0,1],[1,0,0,4,0,0,1],[1,0,2,3,2,0,1],[1,1,0,0,0,1,1],[0,1,1,1,1,1,0]],
+            // Level 15
+            [[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,1],[1,0,1,1,1,1,0,1],[1,0,2,3,3,2,0,1],[1,0,0,4,0,0,0,1],[1,1,1,1,1,1,1,1]],
+            // Level 16
+            [[1,1,1,1,1,1,1,1],[1,3,3,1,3,3,0,1],[1,0,0,0,0,0,0,1],[1,0,2,0,0,2,0,1],[1,0,2,4,0,2,0,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
+            // Level 17
+            [[0,0,1,1,1,1,1,0],[1,1,1,0,0,0,1,1],[1,0,2,0,2,0,0,1],[1,0,0,4,0,0,0,1],[1,0,3,3,3,0,1,1],[1,1,1,1,1,1,1,0]],
+            // Level 18
+            [[1,1,1,1,1,1,1],[1,0,0,0,0,0,1],[1,0,2,1,0,0,1],[1,0,2,4,0,3,1],[1,0,2,1,0,3,1],[1,0,0,0,0,3,1],[1,1,1,1,1,1,1]],
+            // Level 19
+            [[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,3,1],[1,0,1,1,0,1,3,1],[1,0,2,4,2,0,0,1],[1,0,1,1,0,1,3,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
+            // Level 20
+            [[1,1,1,1,1,1,1],[1,0,0,0,0,0,1],[1,0,2,2,0,0,1],[1,0,0,1,0,0,1],[1,0,3,4,3,0,1],[1,0,0,3,0,0,1],[1,1,1,1,1,1,1]],
+            // Level 21-50 (Sample - Adding simpler structure to keep file efficient)
+            [[1,1,1,1,1,1,1],[1,0,0,3,3,0,1],[1,0,0,1,1,0,1],[1,0,2,0,0,2,1],[1,0,0,4,0,0,1],[1,0,2,0,0,2,1],[1,0,0,1,1,0,1],[1,0,0,3,3,0,1],[1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1,1],[1,3,0,0,0,0,0,1],[1,3,0,2,0,2,0,1],[1,3,0,0,4,0,0,1],[1,3,0,2,0,2,0,1],[1,3,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1],[1,0,0,0,0,0,1],[1,0,0,4,0,0,1],[1,0,2,2,2,0,1],[1,0,3,3,3,0,1],[1,0,0,0,0,0,1],[1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1],[1,0,0,0,0,1],[1,0,3,3,3,1],[1,0,2,2,2,1],[1,0,0,4,0,1],[1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1],[1,0,3,3,3,0,1],[1,0,0,0,0,0,1],[1,0,2,1,2,0,1],[1,0,0,4,0,0,1],[1,0,2,0,2,0,1],[1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,1],[1,0,1,2,1,2,1,1],[1,0,0,0,4,0,0,1],[1,0,1,3,1,3,1,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1,1],[1,0,0,3,0,3,0,1],[1,0,0,1,0,1,0,1],[1,0,0,2,4,2,0,1],[1,0,0,0,0,0,0,1],[1,0,0,1,0,1,0,1],[1,0,0,3,0,3,0,1],[1,1,1,1,1,1,1,1]],
+            [[0,1,1,1,1,1,0],[1,1,0,0,0,1,1],[1,0,0,2,0,0,1],[1,0,1,2,1,0,1],[1,0,3,4,3,0,1],[1,0,1,3,1,0,1],[1,0,0,0,0,0,1],[1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1],[1,0,0,0,0,0,1],[1,0,1,0,1,0,1],[1,0,3,2,3,0,1],[1,0,0,4,0,0,1],[1,0,2,0,2,0,1],[1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1],[1,3,0,0,0,3,1],[1,0,2,0,2,0,1],[1,0,0,4,0,0,1],[1,0,2,0,2,0,1],[1,3,0,0,0,3,1],[1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1],[1,0,0,0,0,1],[1,0,3,0,3,1],[1,0,0,2,0,1],[1,0,4,2,0,1],[1,0,0,0,0,1],[1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1],[1,3,0,0,0,3,1],[1,0,1,2,1,0,1],[1,0,0,4,0,0,1],[1,0,2,0,2,0,1],[1,0,0,0,0,0,1],[1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,1],[1,0,2,1,0,1,2,1],[1,0,0,4,0,0,0,1],[1,0,3,0,1,0,3,1],[1,1,1,1,1,1,1,1]],
+            [[0,1,1,1,1,1,0],[1,1,0,0,0,1,1],[1,0,0,2,0,0,1],[1,0,1,0,1,0,1],[1,0,2,4,2,0,1],[1,0,3,0,3,0,1],[1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1,1],[1,3,0,0,0,0,3,1],[1,0,0,1,1,0,0,1],[1,0,2,0,0,2,0,1],[1,0,0,1,1,0,0,1],[1,0,0,4,0,0,0,1],[1,1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1],[1,0,0,0,0,1],[1,0,2,4,2,1],[1,0,3,1,3,1],[1,0,0,0,0,1],[1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,1],[1,0,1,2,1,2,1,1],[1,0,0,4,0,0,0,1],[1,0,1,3,1,3,1,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1],[1,0,0,0,0,1],[1,0,2,1,3,1],[1,0,4,0,0,1],[1,0,2,1,3,1],[1,0,0,0,0,1],[1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1],[1,0,0,0,0,0,1],[1,0,1,4,1,0,1],[1,0,2,0,2,0,1],[1,0,3,0,3,0,1],[1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1],[1,3,0,0,0,3,1],[1,0,2,1,2,0,1],[1,0,0,4,0,0,1],[1,0,1,0,1,0,1],[1,0,0,0,0,0,1],[1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,1],[1,0,1,0,4,0,1,1],[1,0,0,2,2,2,0,1],[1,0,1,3,3,3,1,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1],[1,3,0,0,0,3,1],[1,0,2,0,2,0,1],[1,0,0,1,0,0,1],[1,0,2,0,2,0,1],[1,3,0,4,0,3,1],[1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1,1],[1,0,0,1,0,0,0,1],[1,0,2,3,2,3,0,1],[1,0,0,4,0,0,0,1],[1,0,3,2,3,2,0,1],[1,0,0,1,0,0,0,1],[1,1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,1],[1,0,0,1,1,0,0,1],[1,0,2,3,3,2,0,1],[1,0,0,1,1,0,0,1],[1,0,0,0,4,0,0,1],[1,1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1],[1,3,0,0,0,3,1],[1,0,2,4,2,0,1],[1,0,0,0,0,0,1],[1,0,2,0,2,0,1],[1,3,0,0,0,3,1],[1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1],[1,0,0,0,0,0,1],[1,0,3,1,3,0,1],[1,0,2,0,2,0,1],[1,0,0,4,0,0,1],[1,0,2,0,2,0,1],[1,0,3,1,3,0,1],[1,0,0,0,0,0,1],[1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,1],[1,0,2,1,2,0,0,1],[1,0,3,4,3,0,0,1],[1,0,2,1,2,0,0,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,1],[1,0,0,2,1,0,0,1],[1,0,2,3,3,2,0,1],[1,0,0,4,1,0,0,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,1],[1,0,2,3,0,3,2,1],[1,0,0,0,4,0,0,1],[1,0,2,3,0,3,2,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]],
+            [[1,1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,0,1],[1,0,0,2,4,2,0,0,1],[1,0,0,0,1,0,0,0,1],[1,0,3,0,0,0,3,0,1],[1,0,3,0,0,0,3,0,1],[1,1,1,1,1,1,1,1,1]]
+        ];
+
+        /* =========================================
+           3. محرك اللعبة (GAME ENGINE)
+           ========================================= */
+        const TILE_SIZE = 35; 
+        const container = document.getElementById('game-container');
+        const levelDisplay = document.getElementById('level-display');
+        const movesDisplay = document.getElementById('moves-display');
+
+        let currentLevelIndex = 0;
+        let currentMap = []; 
+        let playerPos = {x: 0, y: 0};
+        let moves = 0;
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        function loadLevel(index) {
+            if (index >= levels.length) {
+                alert("🎉 مبروك! ختمت جميع المراحل!");
+                currentLevelIndex = 0;
+                index = 0;
+            }
+            // Deep copy the level data
+            currentMap = JSON.parse(JSON.stringify(levels[index]));
+            moves = 0;
+            updateUI();
+            
+            // Find player start position
+            for (let y = 0; y < currentMap.length; y++) {
+                for (let x = 0; x < currentMap[y].length; x++) {
+                    if (currentMap[y][x] === 4) {
+                        playerPos = {x: x, y: y};
+                        currentMap[y][x] = 0; // Set ground under player
+                    }
+                }
+            }
+            render();
+        }
+
+        function render() {
+            container.innerHTML = '';
+            // Auto-calculate width
+            let maxWidth = 0;
+            for(let row of currentMap) if(row.length > maxWidth) maxWidth = row.length;
+            
+            container.style.width = maxWidth * TILE_SIZE + 'px';
+            container.style.height = currentMap.length * TILE_SIZE + 'px';
+
+            for (let y = 0; y < currentMap.length; y++) {
+                for (let x = 0; x < currentMap[y].length; x++) {
+                    let type = currentMap[y][x];
+                    let tile = document.createElement('div');
+                    tile.classList.add('cell');
+                    tile.style.left = x * TILE_SIZE + 'px';
+                    tile.style.top = y * TILE_SIZE + 'px';
+
+                    if (type === 1) tile.classList.add('wall');
+                    else if (type === 3) tile.classList.add('goal');
+                    else tile.classList.add('floor');
+
+                    if (type === 2 || type === 5) {
+                        let box = document.createElement('div');
+                        box.classList.add('cell', 'box');
+                        box.style.left = x * TILE_SIZE + 'px';
+                        box.style.top = y * TILE_SIZE + 'px';
+                        if (type === 5) {
+                            box.classList.add('completed');
+                            tile.classList.add('goal');
+                        }
+                        container.appendChild(box);
+                    }
+                    container.appendChild(tile);
+                }
+            }
+            let player = document.createElement('div');
+            player.classList.add('cell', 'player');
+            player.style.left = playerPos.x * TILE_SIZE + 'px';
+            player.style.top = playerPos.y * TILE_SIZE + 'px';
+            container.appendChild(player);
+        }
+
+        function handleInput(e) {
+            if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) e.preventDefault();
+            let dx = 0, dy = 0;
+            if (e.key === 'ArrowUp') dy = -1;
+            else if (e.key === 'ArrowDown') dy = 1;
+            else if (e.key === 'ArrowLeft') dx = -1;
+            else if (e.key === 'ArrowRight') dx = 1;
+            else return;
+            moveLogic(dx, dy);
+        }
+
+        function moveLogic(dx, dy) {
+            let nextX = playerPos.x + dx;
+            let nextY = playerPos.y + dy;
+            if (!currentMap[nextY] || typeof currentMap[nextY][nextX] === 'undefined') return;
+            
+            let nextTile = currentMap[nextY][nextX];
+            if (nextTile === 1) return; // Wall
+
+            if (nextTile === 2 || nextTile === 5) { // Box
+                let afterBoxX = nextX + dx;
+                let afterBoxY = nextY + dy;
+                if (!currentMap[afterBoxY] || typeof currentMap[afterBoxY][afterBoxX] === 'undefined') return;
+                
+                let afterBoxTile = currentMap[afterBoxY][afterBoxX];
+                if (afterBoxTile === 0 || afterBoxTile === 3) {
+                    currentMap[afterBoxY][afterBoxX] = (afterBoxTile === 3) ? 5 : 2;
+                    currentMap[nextY][nextX] = (nextTile === 5) ? 3 : 0;
+                    nextTile = currentMap[nextY][nextX]; 
+                } else {
+                    return; // Blocked
+                }
+            }
+
+            playerPos.x = nextX;
+            playerPos.y = nextY;
+            moves++;
+            updateUI();
+            render();
+            
+            // Win Check
+            let remainingBoxes = 0;
+            for (let row of currentMap) for (let cell of row) if (cell === 2) remainingBoxes++;
+            if (remainingBoxes === 0) {
+                setTimeout(() => {
+                    alert("✨ أحسنت! المرحلة التالية...");
+                    currentLevelIndex++;
+                    loadLevel(currentLevelIndex);
+                }, 100);
+            }
+        }
+
+        function updateUI() {
+            levelDisplay.innerText = currentLevelIndex + 1;
+            movesDisplay.innerText = moves;
+        }
+
+        function resetLevel() { loadLevel(currentLevelIndex); }
+
+        // Touch Support
+        container.addEventListener('touchstart', e => {
+            e.preventDefault();
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, {passive: false});
+
+        container.addEventListener('touchend', e => {
+            e.preventDefault();
+            let dx = e.changedTouches[0].screenX - touchStartX;
+            let dy = e.changedTouches[0].screenY - touchStartY;
+            if (Math.abs(dx) > Math.abs(dy)) moveLogic(dx > 0 ? 1 : -1, 0);
+            else moveLogic(0, dy > 0 ? 1 : -1);
+        }, {passive: false});
+
+        document.addEventListener('keydown', handleInput);
+        
+        // Start Game
+        loadLevel(currentLevelIndex);
+    </script>
 </body>
 </html>
