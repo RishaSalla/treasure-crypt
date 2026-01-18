@@ -33,12 +33,70 @@ function loadLevel(index) {
     render();
 }
 
+function loadLevel(index) {
+    if (index >= levels.length) {
+        alert("🎉 ختمت المجموعة التعليمية! يمكنك إضافة المزيد من ملف Microban.");
+        currentLevelIndex = 0;
+        index = 0;
+    }
+
+    // 1. تحويل الخريطة النصية إلى مصفوفة أرقام
+    // Mapping: #=1, @=4, $=2, .=3, *=5, +=4(on goal), space=0
+    let rawLevel = levels[index];
+    currentMap = rawLevel.map(row => {
+        return row.split('').map(char => {
+            if (char === '#') return 1;
+            if (char === '$') return 2;
+            if (char === '.') return 3;
+            if (char === '@') return 4;
+            if (char === '*') return 5; // صندوق على هدف
+            if (char === '+') return 4; // لاعب على هدف (سنعالجه لاحقاً)
+            return 0;
+        });
+    });
+
+    // 2. معالجة حالة خاصة: إذا كان اللاعب فوق هدف (+)
+    // يجب أن نحفظ أن المكان هو هدف (3) ونضع اللاعب فوقه
+    for(let y=0; y<currentMap.length; y++) {
+        for(let x=0; x<currentMap[y].length; x++) {
+            // تصحيح الأبعاد: إذا كان الصف أقصر من غيره (بسبب المسافات)
+            if (currentMap[y][x] === undefined) currentMap[y][x] = 0;
+            
+            // إذا كان الرمز الأصلي '+' يعني لاعب على هدف
+            if (rawLevel[y][x] === '+') {
+                 // نحتاج لمنطق خاص هنا، أو ببساطة نعتبره لاعباً (4)
+                 // والمحرك سيكتشف الأرضية لاحقاً.
+                 // لكن الأفضل في محركنا الحالي:
+                 currentMap[y][x] = 4; 
+                 // ملاحظة: محركنا الحالي يمسح ما تحت اللاعب ويحوله لأرضية 0
+                 // لذا سنحتاج لتعديل بسيط في findPlayerStart للتعامل مع الأهداف
+            }
+        }
+    }
+
+    moves = 0;
+    playerFacingRight = true;
+    updateUI();
+    findPlayerStart();
+    render();
+}
+
+// تحديث مهم: دالة تحديد مكان اللاعب يجب ألا تمسح الهدف
 function findPlayerStart() {
     for (let y = 0; y < currentMap.length; y++) {
         for (let x = 0; x < currentMap[y].length; x++) {
-            if (currentMap[y][x] === 4) {
+            if (currentMap[y][x] === 4) { // وجدنا اللاعب
                 playerPos = {x: x, y: y};
-                currentMap[y][x] = 0; 
+                
+                // فحص الرمز الأصلي في ملف المستويات
+                let originalChar = levels[currentLevelIndex][y][x];
+                
+                // إذا كان الرمز الأصلي (+) أو (.)، نرجع الأرضية لتكون هدفاً (3)
+                if (originalChar === '+' || originalChar === '.' || originalChar === '*') {
+                    currentMap[y][x] = 3;
+                } else {
+                    currentMap[y][x] = 0; // أرضية عادية
+                }
             }
         }
     }
