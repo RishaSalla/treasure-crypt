@@ -2,150 +2,30 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>لعبة السرداب - مرحلة 1</title>
-    <style>
-        body {
-            background-color: #222; /* لون خلفية شاشة اللعب */
-            color: white;
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
-        
-        #game-container {
-            position: relative;
-            border: 5px solid #555;
-            background-color: #000;
-        }
-
-        /* تصميم الخلايا */
-        .cell {
-            width: 40px;
-            height: 40px;
-            position: absolute;
-            box-sizing: border-box;
-        }
-
-        /* الجدار */
-        .wall {
-            background-color: #7f8c8d;
-            border: 1px solid #555;
-        }
-
-        /* الأرضية */
-        .floor {
-            background-color: #2c3e50;
-        }
-
-        /* البطل */
-        .player {
-            background-color: #e74c3c; /* لون أحمر للبطل */
-            border-radius: 50%; /* لجعله دائرياً */
-            transition: all 0.1s ease; /* حركة ناعمة */
-            z-index: 10;
-        }
-
-        /* الصندوق (سنضيفه لاحقاً) */
-        .box {
-            background-color: #f39c12;
-            border: 2px solid #d35400;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سرداب الكنوز - المحرك الأساسي</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-    <h2>مرحلة 1: تحرك في السرداب (استخدم الأسهم)</h2>
-    <div id="game-container"></div>
+    <div class="game-wrapper">
+        <div class="header">
+            <h1>💎 سرداب الكنوز</h1>
+            <div class="stats">
+                <span>المرحلة: <b id="level-display">1</b></span>
+                <span>الخطوات: <b id="moves-display">0</b></span>
+            </div>
+        </div>
 
-    <script>
-        // 1. تصميم الخريطة (0=أرض، 1=جدار)
-        // هذا المصفوفة هي "عقل" اللعبة
-        const mapLayout = [
-            [1, 1, 1, 1, 1, 1, 1, 1],
-            [1, 0, 0, 0, 0, 1, 0, 1],
-            [1, 0, 1, 1, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 1, 0, 1],
-            [1, 1, 1, 1, 0, 1, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 1],
-            [1, 1, 1, 1, 1, 1, 1, 1]
-        ];
+        <div id="game-container"></div>
 
-        const TILE_SIZE = 40; // حجم المربع بالبكسل
-        const container = document.getElementById('game-container');
-        
-        // موقع البطل المبدئي (الصف 1، العمود 1)
-        let playerPos = { x: 1, y: 1 };
+        <div class="controls">
+            <p>استخدم الأسهم ⬅️⬆️➡️⬇️ للتحرك</p>
+            <button onclick="resetLevel()" class="btn-reset">🔄 إعادة المحاولة</button>
+        </div>
+    </div>
 
-        // 2. دالة لرسم الخريطة في المتصفح
-        function drawMap() {
-            container.style.width = mapLayout[0].length * TILE_SIZE + 'px';
-            container.style.height = mapLayout.length * TILE_SIZE + 'px';
-            container.innerHTML = ''; // تنظيف
-
-            for (let y = 0; y < mapLayout.length; y++) {
-                for (let x = 0; x < mapLayout[y].length; x++) {
-                    // رسم الأرضية والجدران
-                    let tile = document.createElement('div');
-                    tile.classList.add('cell');
-                    
-                    if (mapLayout[y][x] === 1) {
-                        tile.classList.add('wall');
-                    } else {
-                        tile.classList.add('floor');
-                    }
-                    
-                    // تحديد موقع العنصر
-                    tile.style.left = x * TILE_SIZE + 'px';
-                    tile.style.top = y * TILE_SIZE + 'px';
-                    container.appendChild(tile);
-                }
-            }
-
-            // رسم البطل
-            drawPlayer();
-        }
-
-        function drawPlayer() {
-            // نمسح البطل القديم إن وجد
-            const oldPlayer = document.querySelector('.player');
-            if (oldPlayer) oldPlayer.remove();
-
-            let playerDiv = document.createElement('div');
-            playerDiv.classList.add('cell', 'player');
-            playerDiv.style.left = playerPos.x * TILE_SIZE + 'px';
-            playerDiv.style.top = playerPos.y * TILE_SIZE + 'px';
-            container.appendChild(playerDiv);
-        }
-
-        // 3. التحكم والمنطق
-        document.addEventListener('keydown', (e) => {
-            let dx = 0;
-            let dy = 0;
-
-            if (e.key === 'ArrowUp') dy = -1;
-            if (e.key === 'ArrowDown') dy = 1;
-            if (e.key === 'ArrowLeft') dx = -1;
-            if (e.key === 'ArrowRight') dx = 1;
-
-            // حساب الموقع الجديد المقترح
-            let newX = playerPos.x + dx;
-            let newY = playerPos.y + dy;
-
-            // التأكد من أن الموقع الجديد ليس جداراً (رقم 1)
-            if (mapLayout[newY][newX] !== 1) {
-                playerPos.x = newX;
-                playerPos.y = newY;
-                drawPlayer();
-            }
-        });
-
-        // تشغيل اللعبة
-        drawMap();
-
-    </script>
+    <script src="js/levels.js"></script>
+    <script src="js/game.js"></script>
 </body>
 </html>
