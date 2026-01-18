@@ -1,4 +1,3 @@
-/* ... نفس إعدادات الخلفية السابقة ... */
 body {
     background-color: #222;
     color: white;
@@ -8,22 +7,30 @@ body {
     align-items: center;
     min-height: 100vh;
     margin: 0;
+    touch-action: none; /* لمنع تكبير الشاشة عند اللمس المزدوج */
 }
-.game-wrapper { display: flex; flex-direction: column; align-items: center; }
-.header { margin-bottom: 20px; text-align: center; }
-.stats span { margin: 0 10px; font-size: 1.2rem; background: #444; padding: 5px 15px; border-radius: 8px; }
+
+.game-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.header { margin-bottom: 10px; text-align: center; }
+.stats span { margin: 0 10px; font-size: 1rem; background: #444; padding: 5px 15px; border-radius: 8px; }
 
 #game-container {
     position: relative;
-    background-color: #1e272e; /* لون أرضية داكن */
-    border: 5px solid #666;
+    background-color: #1e272e;
+    border: 3px solid #666;
     box-shadow: 0 0 30px rgba(0,0,0,0.9);
     box-sizing: content-box;
 }
 
+/* === التغيير الجذري: تصغير الخلية لزيادة مساحة الرؤية === */
 .cell {
-    width: 50px;
-    height: 50px;
+    width: 35px;  /* كان 50 */
+    height: 35px; /* كان 50 */
     position: absolute;
     box-sizing: border-box;
     display: flex;
@@ -34,7 +41,6 @@ body {
 .wall {
     background-color: #57606f;
     border: 1px solid #2f3542;
-    box-shadow: inset 0 0 10px #000;
 }
 
 .floor {
@@ -49,53 +55,45 @@ body {
 .goal::after {
     content: '✖';
     color: #2ecc71;
-    font-size: 20px;
+    font-size: 14px; /* تصغير العلامة */
     opacity: 0.7;
 }
 
-/* === التعديل الاحترافي هنا === */
-/* تصغير اللاعب بنسبة 20% (من 40px إلى 32px) */
+/* اللاعب متناسق تماماً مع الخلية الصغيرة */
 .player {
     background-color: #ff4757;
     border-radius: 50%;
     z-index: 10;
     border: 2px solid #ff6b81;
-    box-shadow: 0 0 8px rgba(255, 71, 87, 0.6);
-    transition: all 0.12s ease-in-out;
-    
-    width: 32px !important;  /* أصغر وأرشق */
-    height: 32px !important;
+    width: 26px !important; /* متناسب مع 35px */
+    height: 26px !important;
+    box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    transition: all 0.1s ease-in-out;
 }
 
-/* تعديل حجم الصندوق ليتناسب مع المساحة */
+/* الصندوق متناسق */
 .box {
     background-color: #e67e22;
-    border: 3px solid #d35400;
-    border-radius: 6px;
+    border: 2px solid #d35400;
+    border-radius: 4px;
     z-index: 5;
-    transition: all 0.12s ease-in-out;
-    
-    width: 38px !important; /* أصغر قليلاً لترك فراغ في المربع */
-    height: 38px !important;
+    width: 28px !important; /* متناسب مع 35px */
+    height: 28px !important;
+    transition: all 0.1s ease-in-out;
 }
 
 .box.completed {
     background-color: #2ed573;
     border-color: #27ae60;
-    box-shadow: 0 0 15px #2ed573;
 }
 
 .btn-reset {
-    margin-top: 25px;
-    padding: 10px 30px;
+    margin-top: 15px;
+    padding: 8px 25px;
     background: #ffa502;
     border: none;
     color: #1e272e;
-    border-radius: 50px; /* زر دائري أكثر عصرية */
-    cursor: pointer;
-    font-size: 1.1rem;
+    border-radius: 50px;
     font-weight: bold;
-    transition: transform 0.1s;
+    cursor: pointer;
 }
-.btn-reset:active { transform: scale(0.95); }
-.controls p { color: #aaa; margin-top: 15px; font-size: 0.9rem; }
