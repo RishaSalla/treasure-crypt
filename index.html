@@ -2,9 +2,12 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>سرداب الكنوز - كوتو موتو</title>
+    
     <link rel="stylesheet" href="style.css">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -19,7 +22,9 @@
 
         <div id="game-container"></div>
 
-        <button onclick="resetLevel()" class="btn-reset">🔄 إعادة المحاولة</button>
+        <div class="controls-area">
+            <button onclick="resetLevel()" class="btn-reset">🔄 إعادة المحاولة</button>
+        </div>
     </div>
 
     <div id="win-popup" class="popup-overlay">
@@ -30,6 +35,9 @@
         </div>
     </div>
 
-    <script src="game.js"></script>
+    <script src="js/levels.js"></script>
+    
+    <script src="js/game.js"></script>
+
 </body>
 </html>
