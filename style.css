@@ -1,104 +1,82 @@
-:root {
-    --tile-size: 35px;
-    --gold: #f1c40f;
-    --bg-dark: #1a1a1a;
-}
-
+/* التنسيق الأساسي لبيئة اللعبة */
 body {
-    background: var(--bg-dark);
+    background-color: #1a1a1a;
     color: white;
     font-family: 'Cairo', sans-serif;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    height: 100vh;
+    justify-content: center;
+    min-height: 100vh;
     margin: 0;
-    overflow: hidden;
-}
-
-.game-wrapper {
-    text-align: center;
-    background: rgba(255, 255, 255, 0.05);
-    padding: 20px;
-    border-radius: 15px;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.header h1 {
-    color: var(--gold);
-    margin: 0 0 10px 0;
-    cursor: help;
-}
-
-.stats {
-    margin-bottom: 15px;
-    font-size: 1.1rem;
 }
 
 #game-container {
-    position: relative;
-    margin: 0 auto;
-    background: #000;
-    border: 4px solid #333;
+    position: relative; /* ضروري جداً لترتيب الخلايا */
+    border: 5px solid #333;
+    background-color: #0d0d0d;
+    margin: 20px auto;
+    overflow: hidden;
 }
 
+/* تعريف الخلية الواحدة */
 .cell {
-    position: absolute;
-    width: var(--tile-size);
-    height: var(--tile-size);
-    background-size: contain;
+    position: absolute; /* هذا ما يمنع الأخطاء التي ظهرت في صورتك */
+    width: 35px;
+    height: 35px;
+    box-sizing: border-box;
 }
 
-.wall { background-color: #444; border: 1px solid #222; }
-.floor { background-color: #222; }
-.goal { background-color: #2ecc71; border-radius: 50%; transform: scale(0.3); }
-
-.box { background-color: #d35400; border: 2px solid #a04000; z-index: 2; }
-.box.completed { background-color: var(--gold); border-color: #b8860b; }
-
-.player {
-    background-color: #3498db;
-    border-radius: 50%;
-    z-index: 3;
-    transition: all 0.1s ease;
-}
-
-.btn-reset {
-    margin-top: 20px;
-    background: #e74c3c;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-/* Pop-up Style */
-.popup-overlay {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.9);
-    z-index: 9999;
+/* الألوان والأشكال */
+.wall { background-color: #7f8c8d; border: 1px solid #95a5a6; }
+.floor { background-color: #2c3e50; }
+.goal { 
+    background-color: #2c3e50; 
+    display: flex;
     justify-content: center;
     align-items: center;
 }
-
-.popup-content {
-    background: #2c3e50;
-    border: 4px solid var(--gold);
-    padding: 40px;
-    text-align: center;
-    border-radius: 15px;
-    color: white;
+.goal::after {
+    content: '';
+    width: 10px;
+    height: 10px;
+    background-color: #e74c3c;
+    border-radius: 50%;
 }
 
-.popup-content button {
-    background: #27ae60;
-    color: white;
-    border: none;
-    padding: 12px 30px;
-    cursor: pointer;
-    margin-top: 20px;
+.box { 
+    background-color: #d35400; 
+    border: 3px solid #a04000; 
+    z-index: 2; 
+    transition: all 0.1s;
+}
+.box.completed { 
+    background-color: #f1c40f; 
+    border-color: #b8860b; 
+    box-shadow: 0 0 10px #f1c40f;
+}
+
+.player { 
+    background-color: #3498db; 
+    border-radius: 50%; 
+    z-index: 3;
+    transition: all 0.1s;
+}
+
+/* نافذة الفوز */
+.popup-overlay {
+    display: none; 
+    position: fixed; 
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+}
+.popup-content {
+    background: #2c3e50;
+    padding: 30px;
+    border: 3px solid #f1c40f;
+    text-align: center;
+    border-radius: 10px;
 }
