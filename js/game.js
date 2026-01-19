@@ -3,29 +3,24 @@ let currentLevelIndex = 0;
 let currentMap = [];
 let playerPos = { x: 0, y: 0 };
 let moves = 0;
+let playerFacingRight = true;
 
 const container = document.getElementById('game-container');
 
 window.onload = function() {
-    const saved = localStorage.getItem('crypt_progress');
+    const saved = localStorage.getItem('treasure_crypt_progress');
     currentLevelIndex = saved ? parseInt(saved) : 0;
     loadLevel(currentLevelIndex);
-    setupCheat();
-    document.addEventListener('keydown', (e) => {
-        if(e.key === "ArrowUp") move(0, -1);
-        if(e.key === "ArrowDown") move(0, 1);
-        if(e.key === "ArrowLeft") move(-1, 0);
-        if(e.key === "ArrowRight") move(1, 0);
-    });
+    setupCheat(); // تفعيل الزر السري
+    document.addEventListener('keydown', handleInput);
 };
 
 function loadLevel(index) {
-    if(index >= levels.length) index = 0;
+    if(index >= levels.length) { alert("أنت عبقري يا كوتو موتو!"); index = 0; }
     currentLevelIndex = index;
-    localStorage.setItem('crypt_progress', index);
+    localStorage.setItem('treasure_crypt_progress', index);
     moves = 0;
     
-    // تحويل الرموز القديمة لنظام منطقي
     currentMap = levels[index].map(row => row.split('').map(c => {
         if(c==='#') return 1; if(c==='$') return 2; if(c==='.') return 3;
         if(c==='@') return 4; if(c==='*') return 5; return 0;
@@ -40,7 +35,6 @@ function findPlayer() {
         for(let x=0; x<currentMap[y].length; x++) {
             if(currentMap[y][x] === 4) { 
                 playerPos = {x, y}; 
-                // الحفاظ على الأرضية تحت اللاعب
                 currentMap[y][x] = (levels[currentLevelIndex][y][x] === '+') ? 3 : 0; 
             }
         }
@@ -68,8 +62,9 @@ function render() {
             }
         });
     });
+    
     const p = document.createElement('div');
-    p.className = 'cell player';
+    p.className = 'cell player' + (playerFacingRight ? '' : ' facing-left');
     p.style.left = playerPos.x*TILE_SIZE+'px'; p.style.top = playerPos.y*TILE_SIZE+'px';
     container.appendChild(p);
     
@@ -77,7 +72,8 @@ function render() {
     document.getElementById('moves-display').innerText = moves;
 }
 
-function move(dx, dy) {
+function moveLogic(dx, dy) {
+    if(dx !== 0) playerFacingRight = (dx > 0);
     let nx = playerPos.x + dx, ny = playerPos.y + dy;
     if(currentMap[ny][nx] === 1) return;
     
@@ -96,13 +92,20 @@ function move(dx, dy) {
 function setupCheat() {
     const trigger = document.getElementById('cheat-trigger');
     let timer;
+    // الزر السري: ضغط مطول 1.5 ثانية على عنوان اللعبة
     trigger.onmousedown = () => timer = setTimeout(() => { alert("🔓 تخطي كوتو موتو!"); nextLevel(); }, 1500);
     trigger.onmouseup = () => clearTimeout(timer);
+}
+
+function handleInput(e) {
+    if(e.key === "ArrowUp") moveLogic(0, -1);
+    if(e.key === "ArrowDown") moveLogic(0, 1);
+    if(e.key === "ArrowLeft") moveLogic(-1, 0);
+    if(e.key === "ArrowRight") moveLogic(1, 0);
 }
 
 function nextLevel() {
     document.getElementById('win-popup').style.display='none';
     loadLevel(currentLevelIndex + 1);
 }
-
 function resetLevel() { loadLevel(currentLevelIndex); }
