@@ -1,118 +1,104 @@
-/* إعدادات الصفحة */
+:root {
+    --tile-size: 35px;
+    --gold: #f1c40f;
+    --bg-dark: #1a1a1a;
+}
+
 body {
-    background-color: #111;
+    background: var(--bg-dark);
     color: white;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Cairo', sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
+    height: 100vh;
     margin: 0;
-    touch-action: none;
     overflow: hidden;
 }
 
 .game-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    /* تكبير اللعبة لتكون واضحة جداً */
-    transform: scale(1.6);
-    transform-origin: center top;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.header { margin-bottom: 5px; text-align: center; }
-.header h1 { font-size: 1rem; margin: 5px; color: #f1c40f; text-shadow: 2px 2px 0 #000; }
-.stats span { font-size: 0.7rem; background: #333; padding: 2px 8px; border-radius: 4px; margin: 0 3px; border: 1px solid #555; }
+.header h1 {
+    color: var(--gold);
+    margin: 0 0 10px 0;
+    cursor: help;
+}
 
-/* حاوية اللعبة */
+.stats {
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+}
+
 #game-container {
     position: relative;
-    background-color: #0d0d0d;
-    border: 4px solid #555;
-    box-shadow: 0 0 30px rgba(0,0,0,1);
-    margin-top: 5px;
+    margin: 0 auto;
+    background: #000;
+    border: 4px solid #333;
 }
 
-/* === إعدادات الخلايا === */
 .cell {
-    width: 35px;
-    height: 35px;
     position: absolute;
-    box-sizing: border-box;
-    display: flex;
+    width: var(--tile-size);
+    height: var(--tile-size);
+    background-size: contain;
+}
+
+.wall { background-color: #444; border: 1px solid #222; }
+.floor { background-color: #222; }
+.goal { background-color: #2ecc71; border-radius: 50%; transform: scale(0.3); }
+
+.box { background-color: #d35400; border: 2px solid #a04000; z-index: 2; }
+.box.completed { background-color: var(--gold); border-color: #b8860b; }
+
+.player {
+    background-color: #3498db;
+    border-radius: 50%;
+    z-index: 3;
+    transition: all 0.1s ease;
+}
+
+.btn-reset {
+    margin-top: 20px;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Pop-up Style */
+.popup-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9);
+    z-index: 9999;
     justify-content: center;
     align-items: center;
-    /* خصائص عرض الصور */
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
 }
 
-/* 1. الجدار */
-.wall {
-    background-image: url('../assets/images/wall.svg');
-    /* خلفية احتياطية في حال لم يتم تحميل الصورة */
-    background-color: #7f8c8d; 
-}
-
-/* 2. الأرضية */
-.floor {
-    background-image: url('../assets/images/floor.svg');
-}
-
-/* 3. الهدف */
-.goal {
-    /* نستخدم نفس صورة الأرضية لكن نضيف علامة الهدف */
-    background-image: url('../assets/images/floor.svg');
-}
-.goal::after {
-    content: '';
-    position: absolute;
-    width: 35px; height: 35px;
-    /* رسم دائرة الهدف فوق الأرضية */
-    background: radial-gradient(circle, rgba(231,76,60,0.6) 20%, transparent 30%);
-    border: 1px dashed #e74c3c;
-    box-sizing: border-box;
-}
-
-/* 4. الصندوق */
-.box {
-    background-image: url('../assets/images/box.svg');
-    z-index: 5;
-    transition: left 0.1s linear, top 0.1s linear;
-}
-
-/* الصندوق المكتمل */
-.box.completed {
-    background-image: url('../assets/images/box_ok.svg');
-    /* توهج خلفي بسيط */
-    filter: drop-shadow(0 0 5px #f1c40f);
-}
-
-/* 5. اللاعب (المستكشف) */
-.player {
-    background-image: url('../assets/images/player.svg');
-    z-index: 10;
-    transition: left 0.1s linear, top 0.1s linear, transform 0.1s;
-}
-
-/* كلاس لعكس اتجاه اللاعب لليسار */
-.player.facing-left {
-    transform: scaleX(-1);
-}
-
-/* زر إعادة المحاولة */
-.btn-reset {
-    margin-top: 15px;
-    padding: 6px 20px;
-    background: #e67e22;
-    border: none;
-    border-bottom: 3px solid #d35400;
+.popup-content {
+    background: #2c3e50;
+    border: 4px solid var(--gold);
+    padding: 40px;
+    text-align: center;
+    border-radius: 15px;
     color: white;
-    font-weight: bold;
-    cursor: pointer;
-    border-radius: 4px;
 }
-.btn-reset:active { transform: translateY(3px); border-bottom: 0; }
-.controls p { font-size: 0.6rem; color: #777; margin-top: 5px; }
+
+.popup-content button {
+    background: #27ae60;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    cursor: pointer;
+    margin-top: 20px;
+}
