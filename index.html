@@ -2,15 +2,15 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سرداب التيكو تيكو - Pixel Edition</title>
-    <link rel="stylesheet" href="css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>سرداب الكنوز - كوتو موتو</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div class="game-wrapper">
         <div class="header">
-            <h1>💎 سرداب الكنوز</h1>
+            <h1 id="cheat-trigger">💎 سرداب الكنوز</h1>
             <div class="stats">
                 <span>المرحلة: <b id="level-display">1</b></span>
                 <span>الخطوات: <b id="moves-display">0</b></span>
@@ -20,12 +20,16 @@
         <div id="game-container"></div>
 
         <button onclick="resetLevel()" class="btn-reset">🔄 إعادة المحاولة</button>
-        <div class="controls">
-            <p>استخدم الأسهم ⬅️⬆️➡️⬇️ أو اللمس للتحرك</p>
+    </div>
+
+    <div id="win-popup" class="popup-overlay">
+        <div class="popup-content">
+            <h2>🏆 هنيئاً لك يا كوتو موتو!</h2>
+            <p>لقد أثبتّ ذكاءك في فك أسرار السرداب.</p>
+            <button onclick="nextLevel()">المرحلة التالية ➔</button>
         </div>
     </div>
 
-    <script src="js/levels.js"></script>
-    <script src="js/game.js"></script>
+    <script src="game.js"></script>
 </body>
 </html>
