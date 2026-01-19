@@ -1,3 +1,4 @@
+/* إعدادات الخلفية والخط */
 body {
     background-color: #1a1a1a;
     color: white;
@@ -18,43 +19,52 @@ body {
     text-align: center;
 }
 
+/* حاوية اللعبة: تتمدد تلقائياً حسب حجم المرحلة */
 #game-container {
     position: relative;
     background-color: #000;
-    border: 4px solid #333;
+    border: 8px solid #333;
     margin: 20px auto;
-    /* مساحة اللعب ستتمدد تلقائياً بناءً على حجم المرحلة */
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
 }
 
+/* إعدادات الخلايا والصور */
 .cell {
     position: absolute;
     width: 35px;
     height: 35px;
-    box-sizing: border-box;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
-.wall { background-color: #444; border: 1px solid #222; }
-.floor { background-color: #222; }
-.goal { 
-    background-color: #222;
-    display: flex; justify-content: center; align-items: center;
-}
+/* ربط صور SVG من المسار المطلوب */
+.wall { background-image: url('assets/images/wall.svg'); }
+.floor { background-image: url('assets/images/floor.svg'); }
+.goal { background-image: url('assets/images/floor.svg'); position: relative; }
 .goal::after {
-    content: ''; width: 10px; height: 10px;
-    background-color: #e74c3c; border-radius: 50%;
+    content: ''; position: absolute; width: 100%; height: 100%;
+    background: radial-gradient(circle, rgba(231,76,60,0.5) 20%, transparent 30%);
 }
 
-.box { background-color: #d35400; border: 2px solid #a04000; z-index: 2; }
-.box.completed { background-color: #f1c40f; border-color: #b8860b; }
+.box { background-image: url('assets/images/box.svg'); z-index: 2; }
+.box.completed { background-image: url('assets/images/box_ok.svg'); }
 
-.player { background-color: #3498db; border-radius: 50%; z-index: 3; }
+.player { 
+    background-image: url('assets/images/player.svg'); 
+    z-index: 3; 
+    transition: left 0.1s, top 0.1s, transform 0.1s;
+}
 
+/* عكس اتجاه اللاعب لليسار */
+.player.facing-left { transform: scaleX(-1); }
+
+/* نافذة الفوز (Pop-up) */
 .popup-overlay {
     display: none; position: fixed; top: 0; left: 0; 
     width: 100%; height: 100%; background: rgba(0,0,0,0.9);
     z-index: 9999; justify-content: center; align-items: center;
 }
-
 .popup-content {
     background: #2c3e50; border: 4px solid #f1c40f;
     padding: 40px; border-radius: 15px; text-align: center;
